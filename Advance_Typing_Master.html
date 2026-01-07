@@ -1,0 +1,220 @@
+<html>
+<head>
+  <title>Typing Master</title>
+  <style>
+    #container 
+    {
+      position: relative;
+      width: 600px;
+      margin: auto;
+      text-align: left;
+    }
+    #highlight 
+    {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      min-height: 120px;
+      border: 1px solid #ccc;
+      padding: 5px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      color: black;
+      z-index: 1;
+      text-align: left;
+      pointer-events: none;
+    }
+    #box 
+    {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      min-height: 120px;
+      border: 1px solid #ccc;
+      padding: 5px;
+      font-family: monospace;
+      background: transparent;
+      color: transparent;
+      caret-color: black;
+      z-index: 2;
+      resize: none;
+      text-align: left;
+    }
+    .wrong 
+    {
+      text-decoration: underline red wavy;
+    }
+    #submitBtn 
+    {
+      margin-top: 140px; /* ✅ box ke just niche */
+      padding: 8px 15px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+
+<script>
+  var begin = null;
+  var text = "";
+  var limitSec = 0;
+  var timerId = null;
+
+  function makeText() 
+  {
+    var val = document.getElementById("limit").value;
+
+    // ab array me pura sentence hoga
+    var sentences = [
+      "My name is Nikku and I am from Rewa.",
+      "Typing practice helps to improve speed and accuracy.",
+      "JavaScript is a popular language for web development.",
+      "I like to read books and learn new things every day.",
+      "The sun rises in the east and sets in the west.",
+      "We should drink plenty of water to stay healthy."
+    ];
+
+    // random sentence select
+    text = sentences[Math.floor(Math.random() * sentences.length)];
+
+    // agar 200 ya 500 words select kiya to sentence repeat hoga
+    var words = text.split(" ");    //split=string ko array me badalta hai.
+    var repeatCount = Math.ceil(val / words.length); //यहाँ Math.ceil() 👉 ताकि fraction words count(decimal) को upper integer में बदलकर sentence पूरा repeat हो। , 3.9=4।
+    var finalText = "";
+    for (var i = 0; i < repeatCount; i++) 
+    {
+      finalText += text + " ";
+    }
+    finalText = finalText.trim();
+
+    document.getElementById("data").innerText = finalText;
+    document.getElementById("box").value = "";
+    document.getElementById("highlight").innerHTML = "";
+    document.getElementById("box").disabled = false;
+    document.getElementById("box").focus();
+    document.getElementById("clock").innerText = "Time: 00:00";
+    begin = null;
+
+    if (val == "100") limitSec = 180;
+    else if (val == "200") limitSec = 300;
+    else if (val == "500") limitSec = 600;
+
+    var mm = Math.floor(limitSec / 60);
+    var ss = limitSec % 60;
+    document.getElementById("clock").innerText =
+      "Time: " + (mm < 10 ? "0" : "") + mm + ":" + (ss < 10 ? "0" : "") + ss;
+
+    if (timerId) clearInterval(timerId);
+  }
+
+  function start() 
+  {
+    if (begin == null) 
+    {
+      begin = new Date();
+      timerId = setInterval(updateTimer, 1000);
+    }
+    highlightText();
+  }
+
+  function updateTimer() 
+  {
+    var now = new Date();
+    var used = Math.floor((now - begin) / 1000);
+    var left = limitSec - used;
+    if (left < 0) {
+      left = 0;
+      clearInterval(timerId);
+      done();
+    }
+
+    var mm = Math.floor(left / 60);
+    var ss = left % 60;
+    document.getElementById("clock").innerText =
+      "Time: " + (mm < 10 ? "0" : "") + mm + ":" + (ss < 10 ? "0" : "") + ss;
+  }
+
+  function highlightText() 
+  {
+    var targetWords = document.getElementById("data").innerText.trim().split(/\s+/);
+    var typed = document.getElementById("box").value;
+    var typedWords = typed === "" ? [] : typed.split(/\s+/);
+
+    var highlighted = "";
+    for (var i = 0; i < typedWords.length; i++) 
+    {
+      if (typedWords[i] === targetWords[i]) {
+        highlighted += typedWords[i] + " ";
+      }
+        else 
+        {
+        highlighted += "<span class='wrong'>" + typedWords[i] + "</span> ";
+      }
+    }
+    document.getElementById("highlight").innerHTML = highlighted;
+  }
+
+  function done() 
+  {
+    clearInterval(timerId);
+    var end = new Date();
+    var sec = Math.floor((end - begin) / 1000);
+
+    var typed = document.getElementById("box").value.trim();
+    var targetWords = document.getElementById("data").innerText.trim().split(/\s+/);
+    var typedWords = typed === "" ? [] : typed.split(/\s+/);
+
+    var correct = 0;
+    var wrong = 0;
+    for (var i = 0; i < typedWords.length; i++) {
+      if (typedWords[i] === targetWords[i]) correct++;
+      else wrong++;
+    }
+
+    var words = typedWords.length;
+    var speed = Math.floor((words / sec) * 60);
+    var accuracy = words > 0 ? ((correct / words) * 100).toFixed(2) : 0;
+
+    document.getElementById("t").innerText = sec;
+    document.getElementById("wpm").innerText = speed;
+    document.getElementById("acc").innerText = accuracy + "%";
+    document.getElementById("rightCount").innerText = correct;
+    document.getElementById("wrongCount").innerText = wrong;
+    document.getElementById("result").style.display = "block";
+  }
+</script>
+
+<body>
+  <center>
+    <h2>Typing Master</h2>
+    <div id="clock" style="font-size: 20px; font-weight: bold;">Time: 00:00</div>
+    <select id="limit">
+      <option value="">Select Words</option>
+      <option value="100">100 - 3 Min</option>
+      <option value="200">200 - 5 Min</option>
+      <option value="500">500 - 10 Min</option>
+    </select>
+
+    <button onclick="makeText()">Make Text</button>
+    <div id="data" style="margin: 10px; font-weight:bold;"></div>
+
+    <div id="container">
+      <div id="highlight"></div>
+      <textarea id="box" placeholder="Start typing..." disabled onkeyup="start()"></textarea>
+    </div>
+
+    <button id="submitBtn" onclick="done()">Check & Submit</button>
+
+    <div id="result" style="display:none; margin-top:20px;">
+      <h3>Summary</h3>
+      <p>Time Taken: <span id="t"></span> seconds</p>
+      <p>Speed: <span id="wpm"></span> WPM</p>
+      <p>Accuracy: <span id="acc"></span></p>
+      <p>Right Words: <span id="rightCount"></span></p>
+      <p>Wrong Words: <span id="wrongCount"></span></p>
+    </div>
+  </center>
+</body>
+</html>
